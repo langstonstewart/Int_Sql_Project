@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Intermediate SQL - Sales Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            border: 3px solid #ffffff;
+            border-radius: 28px;
+            padding: 36px 28px;
+            background: #0a0a0a;
+            box-shadow: 0 0 30px rgba(255,255,255,0.06);
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .hero h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .hero p {
+            color: #cccccc;
+            font-size: 0.98em;
+            line-height: 1.7;
+            max-width: 860px;
+            margin: 0 auto;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .section {
+            margin-top: 24px;
+            border: 1px solid #444444;
+            border-radius: 18px;
+            padding: 20px;
+            background: linear-gradient(145deg, #111111, #181818);
+        }
+
+        .section h2 {
+            font-size: 1.1em;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .tag {
+            display: inline-block;
+            border: 1px solid #ffffff;
+            border-radius: 999px;
+            padding: 6px 10px;
+            margin: 6px 6px 0 0;
+            font-size: 0.74em;
+            color: #ffffff;
+            letter-spacing: 1px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .card {
+            border: 1px solid #444444;
+            border-radius: 14px;
+            padding: 16px;
+            background: #121212;
+        }
+
+        .card h3 {
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .card p,
+        .card li,
+        .section p,
+        .section li {
+            color: #bbbbbb;
+            font-family: 'Segoe UI', sans-serif;
+            line-height: 1.7;
+        }
+
+        .card ul,
+        .section ul {
+            padding-left: 18px;
+            margin-top: 8px;
+        }
+
+        .card a,
+        .section a {
+            color: #ffffff;
+            text-decoration: none;
+            border-bottom: 1px solid #666666;
+        }
+
+        .card a:hover,
+        .section a:hover {
+            border-color: #ffffff;
+        }
+
+        .analysis-card {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 16px;
+            align-items: start;
+        }
+
+        .analysis-card img {
+            width: 100%;
+            border: 1px solid #444444;
+            border-radius: 12px;
+            background: #0f0f0f;
+        }
+
+        .link-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .link-row a {
+            display: inline-block;
+            padding: 8px 12px;
+            border: 1px solid #555555;
+            border-radius: 999px;
+            font-size: 0.8em;
+            letter-spacing: 0.8px;
+            transition: all 0.2s ease;
+        }
+
+        .link-row a:hover {
+            border-color: #ffffff;
+            background: #ffffff;
+            color: #0a0a0a;
+        }
+
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .analysis-card {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 14px;
+            }
+
+            .container {
+                padding: 24px 16px;
+            }
+
+            .hero h1 {
+                font-size: 1.6em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <h1>Intermediate SQL - Sales Analysis</h1>
+            <p>
+                This project examines customer behavior, retention, and lifetime value using the Contoso 2024 database to uncover opportunities for increasing customer retention and maximizing revenue.
+            </p>
+        </div>
+
+        <div class="section">
+            <h2>Business Questions</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Customer Segmentation</h3>
+                    <p>Who are the most valuable customers?</p>
+                </div>
+                <div class="card">
+                    <h3>Cohort Analysis</h3>
+                    <p>How do different customer groups generate revenue?</p>
+                </div>
+                <div class="card">
+                    <h3>Retention Analysis</h3>
+                    <p>Which customers have not purchased recently?</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Analysis Approach</h2>
+            <div class="card" style="margin-top: 10px;">
+                <h3>1. Customer Segmentation Analysis</h3>
+                <div class="analysis-card">
+                    <div>
+                        <p>Customers were categorized by total lifetime value into low, mid, and high-value segments to understand revenue concentration and average value by group.</p>
+                        <ul>
+                            <li>Segmented customers by lifetime value.</li>
+                            <li>Compared revenue contribution and customer counts across tiers.</li>
+                            <li>Measured average lifetime value by segment.</li>
+                        </ul>
+                        <div class="link-row">
+                            <a href="sql/1_customer_segmentation.sql">View SQL</a>
+                            <a href="charts/1_customer_segmentation.html">View Interactive Chart</a>
+                        </div>
+                    </div>
+                    <img src="images/1_customer_segmentation.png" alt="Customer segmentation chart" />
+                </div>
+                <div class="tag">High-value customers drive most revenue</div>
+                <div class="tag">Upsell and referral opportunities</div>
+            </div>
+
+            <div class="card" style="margin-top: 14px;">
+                <h3>2. Cohort Analysis</h3>
+                <div class="analysis-card">
+                    <div>
+                        <p>Revenue and customer counts were tracked by first-purchase cohort year to evaluate acquisition quality and retention behavior over time.</p>
+                        <ul>
+                            <li>Grouped customers by first purchase year.</li>
+                            <li>Tracked revenue and customer growth per cohort.</li>
+                            <li>Compared revenue per customer across years.</li>
+                        </ul>
+                        <div class="link-row">
+                            <a href="sql/2_cohort_analysis.sql">View SQL</a>
+                            <a href="charts/2_cohort_analysis.html">View Interactive Chart</a>
+                        </div>
+                    </div>
+                    <img src="images/2_cohort_analysis.png" alt="Cohort analysis chart" />
+                </div>
+                <div class="tag">COVID-era acquisition shock</div>
+                <div class="tag">Revenue per customer is declining</div>
+            </div>
+
+            <div class="card" style="margin-top: 14px;">
+                <h3>3. Customer Retention</h3>
+                <div class="analysis-card">
+                    <div>
+                        <p>Customers at risk of churn were identified by reviewing recency of purchase and distinguishing between active and churned accounts over time.</p>
+                        <ul>
+                            <li>Examined recent purchase behavior.</li>
+                            <li>Measured active versus churned customers by cohort.</li>
+                            <li>Highlighted early-life retention weaknesses.</li>
+                        </ul>
+                        <div class="link-row">
+                            <a href="sql/3_retention_analysis.sql">View SQL</a>
+                            <a href="charts/3_retention_analysis.html">View Interactive Chart</a>
+                        </div>
+                    </div>
+                    <img src="images/3_retention_analysis.png" alt="Retention analysis chart" />
+                </div>
+                <div class="tag">Churn rate remains unusually flat</div>
+                <div class="tag">Second-purchase programs are critical</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Key Findings</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Segmentation</h3>
+                    <ul>
+                        <li>High-value customers generate the most revenue by a wide margin.</li>
+                        <li>Average lifetime value is dominated by the high-value segment.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Cohorts</h3>
+                    <ul>
+                        <li>Customer counts and revenue weakened after the early acquisition peak.</li>
+                        <li>Revenue per customer has steadily declined since the strongest cohorts.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Retention</h3>
+                    <ul>
+                        <li>Only a small share of customers appear to remain engaged long term.</li>
+                        <li>The biggest weakness appears in the period immediately after the first purchase.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Strategic Recommendations</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Customer Value Optimization</h3>
+                    <ul>
+                        <li>Target mid-value customers with upsell and cross-sell campaigns.</li>
+                        <li>Introduce a VIP experience for high-value customers.</li>
+                        <li>Build referral programs that attract similar users.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Cohort Performance Strategy</h3>
+                    <ul>
+                        <li>Tighten acquisition targeting to improve customer count.</li>
+                        <li>Re-evaluate pricing and promotions for stronger first-order value.</li>
+                        <li>Use earlier cohorts as benchmarks for quality.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Retention & Churn Prevention</h3>
+                    <ul>
+                        <li>Create a second-purchase program shortly after the first order.</li>
+                        <li>Trigger personalized reminders and offers for at-risk users.</li>
+                        <li>Prioritize retention because even small improvements multiply across cohorts.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Technical Details</h2>
+            <div class="card" style="margin-top: 10px;">
+                <ul>
+                    <li><strong>Database:</strong> PostgreSQL</li>
+                    <li><strong>Analysis Tools:</strong> PostgreSQL, pgAdmin, DBeaver</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
