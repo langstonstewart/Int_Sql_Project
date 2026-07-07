@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Retention Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1080px;
+            width: 100%;
+            border: 3px solid #ffffff;
+            border-radius: 25px;
+            padding: 40px 35px;
+            background: #0a0a0a;
+            box-shadow: 0 0 30px rgba(255,255,255,0.06);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            margin-bottom: 8px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .header p {
+            font-size: 0.95em;
+            color: #cccccc;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .chart-card {
+            border: 1px solid #444444;
+            border-radius: 16px;
+            padding: 18px;
+            background: linear-gradient(145deg, #111111, #181818);
+            margin-bottom: 20px;
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .chart-header h2 {
+            font-size: 1.05em;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .pill {
+            border: 1px solid #ffffff;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 0.74em;
+            color: #ffffff;
+            letter-spacing: 1px;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .view-btn {
+            border: 1px solid #555555;
+            background: #121212;
+            color: #ffffff;
+            padding: 7px 10px;
+            border-radius: 999px;
+            font-size: 0.72em;
+            letter-spacing: 0.8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Courier New', monospace;
+        }
+
+        .view-btn:hover,
+        .view-btn.active {
+            border-color: #ffffff;
+            background: #ffffff;
+            color: #0a0a0a;
+        }
+
+        .chart-area {
+            height: 380px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin: 20px 0 24px;
+        }
+
+        .summary-card {
+            border: 1px solid #444444;
+            border-radius: 12px;
+            padding: 12px;
+            background: #121212;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-2px);
+            border-color: #ffffff;
+        }
+
+        .summary-card .label {
+            font-size: 0.78em;
+            color: #888888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .summary-card .value {
+            font-size: 1.05em;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+
+        .summary-card .meta {
+            font-size: 0.86em;
+            color: #bbbbbb;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .description {
+            font-size: 0.95em;
+            color: #bbbbbb;
+            line-height: 1.8;
+            max-width: 820px;
+            margin: 0 auto;
+            font-family: 'Segoe UI', sans-serif;
+            text-align: center;
+        }
+
+        @media (max-width: 900px) {
+            .summary-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 24px 16px;
+            }
+
+            .header h1 {
+                font-size: 1.6em;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-area {
+                height: 320px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Retention Analysis</h1>
+            <p>Active versus churned customers by cohort year</p>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-header">
+                <h2>Customer Status by Cohort Year</h2>
+                <div class="view-toggle" role="tablist" aria-label="Retention view selector">
+                    <button class="view-btn active" data-view="percent">Percent</button>
+                    <button class="view-btn" data-view="count">Customer Count</button>
+                </div>
+            </div>
+            <div class="chart-area">
+                <canvas id="retentionChart"></canvas>
+            </div>
+        </div>
+
+        <div class="summary-grid" id="summaryGrid"></div>
+
+        <p class="description">
+            Each bar shows the split between active and churned customers for a given cohort year, making retention changes immediately visible.
+        </p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script>
+        const retentionData = [
+            { cohortYear: 2015, active: 237, churned: 2588, total: 2825, activePct: 8.4, churnedPct: 91.6 },
+            { cohortYear: 2016, active: 311, churned: 3086, total: 3397, activePct: 9.2, churnedPct: 90.8 },
+            { cohortYear: 2017, active: 385, churned: 3683, total: 4068, activePct: 9.5, churnedPct: 90.5 },
+            { cohortYear: 2018, active: 704, churned: 6742, total: 7446, activePct: 9.5, churnedPct: 90.5 },
+            { cohortYear: 2019, active: 687, churned: 7068, total: 7755, activePct: 8.9, churnedPct: 91.1 },
+            { cohortYear: 2020, active: 283, churned: 2748, total: 3031, activePct: 9.3, churnedPct: 90.7 },
+            { cohortYear: 2021, active: 442, churned: 4221, total: 4663, activePct: 9.5, churnedPct: 90.5 },
+            { cohortYear: 2022, active: 937, churned: 8073, total: 9010, activePct: 10.4, churnedPct: 89.6 },
+            { cohortYear: 2023, active: 455, churned: 4263, total: 4718, activePct: 9.6, churnedPct: 90.4 }
+        ];
+
+        const summaryGrid = document.getElementById('summaryGrid');
+        summaryGrid.innerHTML = retentionData.map(item => `
+            <div class="summary-card">
+                <div class="label">${item.cohortYear}</div>
+                <div class="value">${item.total.toLocaleString()} total</div>
+                <div class="meta">Active ${item.active.toLocaleString()} • Churned ${item.churned.toLocaleString()}</div>
+            </div>
+        `).join('');
+
+        const ctx = document.getElementById('retentionChart');
+        const viewButtons = document.querySelectorAll('.view-btn');
+        let chart;
+
+        function getChartData(view) {
+            if (view === 'count') {
+                return {
+                    datasets: [
+                        {
+                            label: 'Active Customers',
+                            data: retentionData.map(item => item.active),
+                            backgroundColor: '#ffffff',
+                            borderColor: '#ffffff',
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            maxBarThickness: 46
+                        },
+                        {
+                            label: 'Churned Customers',
+                            data: retentionData.map(item => item.churned),
+                            backgroundColor: '#9aa0a6',
+                            borderColor: '#9aa0a6',
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            maxBarThickness: 46
+                        }
+                    ],
+                    yTicks: value => value.toLocaleString(),
+                    max: undefined
+                };
+            }
+
+            return {
+                datasets: [
+                    {
+                        label: 'Active Customers',
+                        data: retentionData.map(item => item.activePct),
+                        backgroundColor: '#ffffff',
+                        borderColor: '#ffffff',
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        maxBarThickness: 46
+                    },
+                    {
+                        label: 'Churned Customers',
+                        data: retentionData.map(item => item.churnedPct),
+                        backgroundColor: '#9aa0a6',
+                        borderColor: '#9aa0a6',
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        maxBarThickness: 46
+                    }
+                ],
+                yTicks: value => `${value}%`,
+                max: 100
+            };
+        }
+
+        function renderChart(view) {
+            const config = getChartData(view);
+            viewButtons.forEach(button => {
+                button.classList.toggle('active', button.dataset.view === view);
+            });
+
+            if (!chart) {
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: retentionData.map(item => item.cohortYear),
+                        datasets: config.datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            duration: 1200,
+                            easing: 'easeOutQuart'
+                        },
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#ffffff'
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.dataset.label;
+                                        const value = context.raw;
+                                        if (view === 'count') {
+                                            return `${label}: ${value.toLocaleString()} customers`;
+                                        }
+                                        return `${label}: ${value}%`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                stacked: true,
+                                ticks: {
+                                    color: '#ffffff'
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                max: config.max,
+                                ticks: {
+                                    color: '#cccccc',
+                                    callback: config.yTicks
+                                },
+                                grid: {
+                                    color: 'rgba(255,255,255,0.08)'
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                chart.data.datasets = config.datasets;
+                chart.options.scales.y.max = config.max;
+                chart.options.scales.y.ticks.callback = config.yTicks;
+                chart.options.plugins.tooltip.callbacks.label = function(context) {
+                    const label = context.dataset.label;
+                    const value = context.raw;
+                    if (view === 'count') {
+                        return `${label}: ${value.toLocaleString()} customers`;
+                    }
+                    return `${label}: ${value}%`;
+                };
+                chart.update();
+            }
+        }
+
+        viewButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                renderChart(button.dataset.view);
+            });
+        });
+
+        renderChart('percent');
+    </script>
+</body>
+</html>

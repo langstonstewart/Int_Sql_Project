@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Customer Segmentation LTV</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 980px;
+            width: 100%;
+            border: 3px solid #ffffff;
+            border-radius: 25px;
+            padding: 40px 35px;
+            background: #0a0a0a;
+            box-shadow: 0 0 30px rgba(255,255,255,0.06);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            margin-bottom: 8px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .header p {
+            font-size: 0.95em;
+            color: #cccccc;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .chart-card {
+            border: 1px solid #444444;
+            border-radius: 16px;
+            padding: 18px;
+            background: linear-gradient(145deg, #111111, #181818);
+            margin-bottom: 20px;
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .chart-header h2 {
+            font-size: 1.05em;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .chart-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .view-btn {
+            border: 1px solid #555555;
+            background: #121212;
+            color: #ffffff;
+            padding: 7px 10px;
+            border-radius: 999px;
+            font-size: 0.72em;
+            letter-spacing: 0.8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Courier New', monospace;
+        }
+
+        .view-btn:hover,
+        .view-btn.active {
+            border-color: #ffffff;
+            background: #ffffff;
+            color: #0a0a0a;
+        }
+
+        .pill {
+            border: 1px solid #ffffff;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 0.74em;
+            color: #ffffff;
+            letter-spacing: 1px;
+        }
+
+        .chart-area {
+            height: 360px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin: 20px 0 24px;
+        }
+
+        .summary-card {
+            border: 1px solid #444444;
+            border-radius: 12px;
+            padding: 14px;
+            background: #121212;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-2px);
+            border-color: #ffffff;
+        }
+
+        .summary-card .label {
+            font-size: 0.8em;
+            color: #888888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .summary-card .value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+
+        .summary-card .meta {
+            font-size: 0.9em;
+            color: #bbbbbb;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .description {
+            font-size: 0.95em;
+            color: #bbbbbb;
+            line-height: 1.8;
+            max-width: 760px;
+            margin: 0 auto;
+            font-family: 'Segoe UI', sans-serif;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 24px 18px;
+            }
+
+            .header h1 {
+                font-size: 1.6em;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-area {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Customer Segmentation LTV</h1>
+            <p>Interactive view of customer lifetime value by segment</p>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-header">
+                <h2 id="chartTitle">Total LTV by Segment</h2>
+                <div class="chart-controls">
+                    <div class="view-toggle" role="tablist" aria-label="Chart metric selector">
+                        <button class="view-btn active" data-view="total">Total LTV</button>
+                        <button class="view-btn" data-view="customers">Customer Count</button>
+                        <button class="view-btn" data-view="avg">Avg LTV</button>
+                    </div>
+                </div>
+            </div>
+            <div class="chart-area">
+                <canvas id="ltvChart"></canvas>
+            </div>
+        </div>
+
+        <div class="summary-grid" id="summaryGrid"></div>
+
+        <p class="description">
+            To determine the average lifetime value, each customer was put into one of the three categories above.
+        </p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script>
+        const segmentData = [
+            { segment: '1 - Low-Value', totalLtv: 4341809.527328142, customers: 12372, avgLtv: 350.9383711063807 },
+            { segment: '2 - Mid-Value', totalLtv: 66636451.78723873, customers: 24743, avgLtv: 2693.1435875697666 },
+            { segment: '3 - High-Value', totalLtv: 135429277.26549852, customers: 12372, avgLtv: 10946.433661938128 }
+                            ]
+    
+
+        const metricConfig = {
+            total: {
+                label: 'Total LTV by Segment',
+                valueKey: 'totalLtv',
+                formatter: value => '$' + value.toLocaleString(),
+                tooltipLabel: 'Total LTV',
+                meta: item => `${item.customers} customers • Avg $${item.avgLtv.toLocaleString()}`
+            },
+            customers: {
+                label: 'Customer Count by Segment',
+                valueKey: 'customers',
+                formatter: value => value.toLocaleString(),
+                tooltipLabel: 'Customers',
+                meta: item => `${item.customers} customers in segment`
+            },
+            avg: {
+                label: 'Average LTV per Customer',
+                valueKey: 'avgLtv',
+                formatter: value => '$' + value.toLocaleString(),
+                tooltipLabel: 'Avg LTV',
+                meta: item => `Avg $${item.avgLtv.toLocaleString()} per customer`
+            }
+        };
+
+        const summaryGrid = document.getElementById('summaryGrid');
+        const chartTitle = document.getElementById('chartTitle');
+        const viewButtons = document.querySelectorAll('.view-btn');
+        const ctx = document.getElementById('ltvChart');
+
+        let activeMetric = 'total';
+        let chart;
+
+        function renderSummary(metric) {
+            const config = metricConfig[metric];
+            summaryGrid.innerHTML = segmentData.map(item => `
+                <div class="summary-card">
+                    <div class="label">${item.segment}</div>
+                    <div class="value">${config.formatter(item[config.valueKey])}</div>
+                    <div class="meta">${config.meta(item)}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderChart(metric) {
+            const config = metricConfig[metric];
+            chartTitle.textContent = config.label;
+
+            viewButtons.forEach(button => {
+                button.classList.toggle('active', button.dataset.view === metric);
+            });
+
+            if (!chart) {
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: segmentData.map(item => item.segment),
+                        datasets: [{
+                            label: config.label,
+                            data: segmentData.map(item => item[config.valueKey]),
+                            backgroundColor: ['#d9d9d9', '#bdbdbd', '#7f7f7f'],
+                            borderColor: ['#d9d9d9', '#bdbdbd', '#7f7f7f'],
+                            borderWidth: 2,
+                            borderRadius: 10,
+                            maxBarThickness: 70
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            duration: 1200,
+                            easing: 'easeOutQuart'
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const item = segmentData[context.dataIndex];
+                                        const value = item[config.valueKey];
+                                        return `${config.tooltipLabel}: ${config.formatter(value)}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: '#cccccc',
+                                    callback: value => config.formatter(Number(value))
+                                },
+                                grid: {
+                                    color: 'rgba(255,255,255,0.08)'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: '#ffffff'
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                chart.data.datasets[0].label = config.label;
+                chart.data.datasets[0].data = segmentData.map(item => item[config.valueKey]);
+                chart.options.plugins.tooltip.callbacks.label = function(context) {
+                    const item = segmentData[context.dataIndex];
+                    const value = item[config.valueKey];
+                    return `${config.tooltipLabel}: ${config.formatter(value)}`;
+                };
+                chart.options.scales.y.ticks.callback = value => config.formatter(Number(value));
+                chart.update();
+            }
+        }
+
+        viewButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                activeMetric = button.dataset.view;
+                renderSummary(activeMetric);
+                renderChart(activeMetric);
+            });
+        });
+
+        renderSummary(activeMetric);
+        renderChart(activeMetric);
+    </script>
+</body>
+</html>

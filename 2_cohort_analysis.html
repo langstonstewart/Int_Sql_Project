@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cohort Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1080px;
+            width: 100%;
+            border: 3px solid #ffffff;
+            border-radius: 25px;
+            padding: 40px 35px;
+            background: #0a0a0a;
+            box-shadow: 0 0 30px rgba(255,255,255,0.06);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            margin-bottom: 8px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .header p {
+            font-size: 0.95em;
+            color: #cccccc;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .chart-card {
+            border: 1px solid #444444;
+            border-radius: 16px;
+            padding: 18px;
+            background: linear-gradient(145deg, #111111, #181818);
+            margin-bottom: 20px;
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .chart-header h2 {
+            font-size: 1.05em;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .chart-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .view-btn {
+            border: 1px solid #555555;
+            background: #121212;
+            color: #ffffff;
+            padding: 7px 10px;
+            border-radius: 999px;
+            font-size: 0.72em;
+            letter-spacing: 0.8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Courier New', monospace;
+        }
+
+        .view-btn:hover,
+        .view-btn.active {
+            border-color: #ffffff;
+            background: #ffffff;
+            color: #0a0a0a;
+        }
+
+        .pill {
+            border: 1px solid #ffffff;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 0.74em;
+            color: #ffffff;
+            letter-spacing: 1px;
+        }
+
+        .chart-area {
+            height: 380px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin: 20px 0 24px;
+        }
+
+        .summary-card {
+            border: 1px solid #444444;
+            border-radius: 12px;
+            padding: 12px;
+            background: #121212;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-2px);
+            border-color: #ffffff;
+        }
+
+        .summary-card .label {
+            font-size: 0.78em;
+            color: #888888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .summary-card .value {
+            font-size: 1.05em;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+
+        .summary-card .meta {
+            font-size: 0.86em;
+            color: #bbbbbb;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .description {
+            font-size: 0.95em;
+            color: #bbbbbb;
+            line-height: 1.8;
+            max-width: 820px;
+            margin: 0 auto;
+            font-family: 'Segoe UI', sans-serif;
+            text-align: center;
+        }
+
+        @media (max-width: 900px) {
+            .summary-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 24px 16px;
+            }
+
+            .header h1 {
+                font-size: 1.6em;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-area {
+                height: 320px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Cohort Analysis</h1>
+            <p>Interactive view of customer cohorts by first purchase year</p>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-header">
+                <h2 id="chartTitle">Total Customers by Cohort Year</h2>
+                <div class="chart-controls">
+                    <div class="view-toggle" role="tablist" aria-label="Cohort metric selector">
+                        <button class="view-btn active" data-view="customers">Customers</button>
+                        <button class="view-btn" data-view="revenue">Net Revenue</button>
+                        <button class="view-btn" data-view="avg">Revenue per Customer</button>
+                    </div>
+
+                </div>
+            </div>
+            <div class="chart-area">
+                <canvas id="cohortChart"></canvas>
+            </div>
+        </div>
+
+        <div class="summary-grid" id="summaryGrid"></div>
+
+        <p class="description">
+            This view highlights how each cohort year performs across customer growth, revenue contribution, and average revenue per customer.
+        </p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script>
+        const cohortData = [
+            { cohortYear: 2015, totalCustomers: 2825, totalNetRevenue: 7245612.977386287, customerRevenue: 2564.818753057093 },
+            { cohortYear: 2016, totalCustomers: 3397, totalNetRevenue: 9839134.340623533, customerRevenue: 2896.41870492303 },
+            { cohortYear: 2017, totalCustomers: 4068, totalNetRevenue: 11771496.313936569, customerRevenue: 2893.6814931014183 },
+            { cohortYear: 2018, totalCustomers: 7446, totalNetRevenue: 19773770.555444763, customerRevenue: 2655.623227967333 },
+            { cohortYear: 2019, totalCustomers: 7755, totalNetRevenue: 22245058.21636301, customerRevenue: 2868.4794605239217 },
+            { cohortYear: 2020, totalCustomers: 3031, totalNetRevenue: 7058614.523282488, customerRevenue: 2328.807167034803 },
+            { cohortYear: 2021, totalCustomers: 4663, totalNetRevenue: 11974082.363847343, customerRevenue: 2567.8924220131553 },
+            { cohortYear: 2022, totalCustomers: 9010, totalNetRevenue: 21507554.55017317, customerRevenue: 2387.075976711784 },
+            { cohortYear: 2023, totalCustomers: 5890, totalNetRevenue: 12890580.83980028, customerRevenue: 2188.5536230560747 },
+            { cohortYear: 2024, totalCustomers: 1402, totalNetRevenue: 2764779.660859805, customerRevenue: 1972.025435705995 }
+        ];
+
+        const metricConfig = {
+            customers: {
+                label: 'Total Customers by Cohort Year',
+                valueKey: 'totalCustomers',
+                formatter: value => value.toLocaleString(),
+                tooltipLabel: 'Customers',
+                meta: item => `${item.totalCustomers.toLocaleString()} customers`
+            },
+            revenue: {
+                label: 'Total Net Revenue by Cohort Year',
+                valueKey: 'totalNetRevenue',
+                formatter: value => '$' + value.toLocaleString(undefined, { maximumFractionDigits: 2 }),
+                tooltipLabel: 'Net Revenue',
+                meta: item => `$${item.totalNetRevenue.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+            },
+            avg: {
+                label: 'Average Revenue per Customer by Cohort Year',
+                valueKey: 'customerRevenue',
+                formatter: value => '$' + value.toLocaleString(undefined, { maximumFractionDigits: 2 }),
+                tooltipLabel: 'Revenue per Customer',
+                meta: item => `$${item.customerRevenue.toLocaleString(undefined, { maximumFractionDigits: 2 })} avg`
+            }
+        };
+
+        const summaryGrid = document.getElementById('summaryGrid');
+        const chartTitle = document.getElementById('chartTitle');
+        const viewButtons = document.querySelectorAll('.view-btn');
+        const ctx = document.getElementById('cohortChart');
+
+        let activeMetric = 'customers';
+        let chart;
+
+        function renderSummary(metric) {
+            const config = metricConfig[metric];
+            summaryGrid.innerHTML = cohortData.map(item => `
+                <div class="summary-card">
+                    <div class="label">${item.cohortYear}</div>
+                    <div class="value">${config.formatter(item[config.valueKey])}</div>
+                    <div class="meta">${config.meta(item)}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderChart(metric) {
+            const config = metricConfig[metric];
+            chartTitle.textContent = config.label;
+
+            viewButtons.forEach(button => {
+                button.classList.toggle('active', button.dataset.view === metric);
+            });
+
+            const values = cohortData.map(item => item[config.valueKey]);
+            const labels = cohortData.map(item => item.cohortYear);
+
+            const trendLineValues = values.length > 1 ? (() => {
+                const startValue = values[0];
+                const endValue = values[values.length - 1];
+                const decay = Math.pow(endValue / Math.max(startValue, 1), 1 / Math.max(values.length - 1, 1));
+                return values.map((_, index) => startValue * Math.pow(decay, index));
+            })() : values;
+
+            const datasets = [
+                {
+                    label: config.label,
+                    data: values,
+                    backgroundColor: ['#d9d9d9', '#c7c7c7', '#b0b0b0', '#9a9a9a', '#858585', '#707070', '#5c5c5c', '#484848', '#363636', '#242424'],
+                    borderColor: ['#d9d9d9', '#c7c7c7', '#b0b0b0', '#9a9a9a', '#858585', '#707070', '#5c5c5c', '#484848', '#363636', '#242424'],
+                    borderWidth: 2,
+                    borderRadius: 10,
+                    maxBarThickness: 58,
+                    type: 'bar',
+                    order: 1
+                }
+            ];
+
+            if (metric === 'avg') {
+                datasets.push({
+                    label: 'Exponential Trend',
+                    data: trendLineValues,
+                    type: 'line',
+                    borderColor: '#ffffff',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0.2,
+                    borderDash: [5, 5],
+                    order: 2
+                });
+            }
+
+            if (!chart) {
+                chart = new Chart(ctx, {
+                    data: {
+                        labels,
+                        datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            duration: 1200,
+                            easing: 'easeOutQuart'
+                        },
+                        plugins: {
+                            legend: {
+                                display: metric === 'avg'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const item = cohortData[context.dataIndex];
+                                        const value = item[config.valueKey];
+                                        return `${config.tooltipLabel}: ${config.formatter(value)}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: '#cccccc',
+                                    callback: value => config.formatter(Number(value))
+                                },
+                                grid: {
+                                    color: 'rgba(255,255,255,0.08)'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: '#ffffff'
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                chart.data.labels = labels;
+                chart.data.datasets = datasets;
+                chart.options.plugins.legend.display = metric === 'avg';
+                chart.options.plugins.tooltip.callbacks.label = function(context) {
+                    const item = cohortData[context.dataIndex];
+                    const value = item[config.valueKey];
+                    return `${config.tooltipLabel}: ${config.formatter(value)}`;
+                };
+                chart.options.scales.y.ticks.callback = value => config.formatter(Number(value));
+                chart.update();
+            }
+        }
+
+        viewButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                activeMetric = button.dataset.view;
+                renderSummary(activeMetric);
+                renderChart(activeMetric);
+            });
+        });
+
+        renderSummary(activeMetric);
+        renderChart(activeMetric);
+    </script>
+</body>
+</html>
