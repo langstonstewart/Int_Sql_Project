@@ -21,7 +21,7 @@ Query: [1_customer_segmentation.sql](/1_customer_segmentation.sql)
 
 ![1_customer_segmentation.png](images/1_customer_segmentation.png)
 
-[View Interactive Chart...](/1_customer_segmentation.html)
+[View Interactive Chart...](charts/1_customer_segmentation.html)
 
 **Key Findings**
 
@@ -45,7 +45,7 @@ Query: [2_cohort_analysis.sql](/2_cohort_analysis.sql)
 
 ![2_cohort_analysis.png](images/2_cohort_analysis.png)
 
-[View Interactive Chart...](/2_cohort_analysis.html)
+[View Interactive Chart...](charts/2_cohort_analysis.html)
 
 **Key Findings**
 
@@ -67,9 +67,9 @@ Query: [3_retention_analysis.sql](/3_retention_analysis.sql)
 
 **Visualization:**
 
-![3_retention_analysis.png](images/2_cohort_analysis.png)
+![3_retention_analysis.png](images/3_retention_analysis.png)
 
-[View Interactive Chart...](/2_cohort_analysis.html)
+[View Interactive Chart...](charts/3_retention_analysis.html)
 
 
 **Key Findings**
