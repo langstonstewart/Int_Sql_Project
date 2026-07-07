@@ -15,7 +15,7 @@ Analysis from the Contoso 2024 database examining customer behavior, retention, 
 - Customers were segmented into a Low-Value, Mid-Value, or High-Value category
 - Determined the average lifetime value for each category of consumer
 
-Query: [1_customer_segmentation.sql](/1_customer_segmentation.sql)
+Query: [1_customer_segmentation.sql](sql/1_customer_segmentation.sql)
 
 **Visualization:**
 
@@ -39,7 +39,7 @@ Query: [1_customer_segmentation.sql](/1_customer_segmentation.sql)
 - Cohorts were grouped and sorted by the year of their first purchase
 - Analyzed customer retention and behavior at a cohort level
 
-Query: [2_cohort_analysis.sql](/2_cohort_analysis.sql)
+Query: [2_cohort_analysis.sql](sql/2_cohort_analysis.sql)
 
 **Visualization:**
 
@@ -63,7 +63,7 @@ Query: [2_cohort_analysis.sql](/2_cohort_analysis.sql)
 - Analyzed their last purchase patterns
 - Examined metrics unique to each customer
 
-Query: [3_retention_analysis.sql](/3_retention_analysis.sql)
+Query: [3_retention_analysis.sql](sql/3_retention_analysis.sql)
 
 **Visualization:**
 
